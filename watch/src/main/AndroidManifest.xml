@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application
+        android:label="MiWear DND Bridge"
+        android:icon="@drawable/miwear_dnd_bridge_icon">
+
+        <service
+            android:name=".WatchDndListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:path="/dnd-sync" />
+                <data android:scheme="wear" android:host="*" android:path="/alarm-ring" />
+                <data android:scheme="wear" android:host="*" android:path="/alarm-stop" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".AlarmPlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+    </application>
+</manifest>
