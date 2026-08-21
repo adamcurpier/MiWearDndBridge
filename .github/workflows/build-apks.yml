@@ -1,0 +1,44 @@
+name: Build Phone and Watch APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build both modules in the same signing environment
+        run: gradle :phone:assembleDebug :watch:assembleDebug
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p release
+          cp phone/build/outputs/apk/debug/phone-debug.apk release/MiWearDndBridge-Phone-v1.0.0-debug.apk
+          cp watch/build/outputs/apk/debug/watch-debug.apk release/MiWearDndBridge-Watch-v1.0.0-debug.apk
+
+      - name: Upload paired APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiWearDndBridge-v1.0.0-debug-pair
+          path: release/*.apk
+
+# NOTE: GitHub-hosted debug signing keys are ephemeral between workflow runs.
+# The two APKs produced by one run match each other, but a future run may not
+# upgrade over a previously installed pair. For stable releases, configure a
+# persistent release keystore and build/sign BOTH modules with that same key.
