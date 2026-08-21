@@ -82,6 +82,8 @@ Mi Fitness remains installed and continues to provide Xiaomi's normal watch inte
 
 The phone and Watch APKs must use the **same package ID and signing certificate** for Wear OS Data Layer communication. Build both modules from the same checkout/signing environment. Do not independently re-sign only one APK.
 
+The included GitHub Actions workflow builds both debug APKs together and uploads them as one paired workflow artifact. GitHub-hosted debug signing keys are ephemeral between runs, so for a stable update channel configure a persistent signing key and sign both modules with it.
+
 ## Tested user audio settings
 
 The final test device used:
@@ -100,9 +102,11 @@ Proprietary Xiaomi/Google APKs examined during reverse engineering are intention
 ## Documentation
 
 - [Installation guide](INSTALLATION.md)
+- [Troubleshooting guide](TROUBLESHOOTING.md)
 - [Full technical report](TECHNICAL_REPORT.md)
 - [Validation matrix](docs/VALIDATION.md)
 - [Version 1.0 release notes](CHANGELOG.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Word version of the final technical report](docs/MiWear-DND-Bridge-v1.0.0-Final-Report.docx)
 
 ## Compatibility
