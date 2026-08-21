@@ -1,0 +1,79 @@
+name: Publish v1.0.0 Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-v1-release.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 36 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build matched phone and Watch APK pair
+        run: gradle :phone:assembleDebug :watch:assembleDebug
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          cp phone/build/outputs/apk/debug/phone-debug.apk release/MiWearDndBridge-Phone-v1.0.0-CI-debug.apk
+          cp watch/build/outputs/apk/debug/watch-debug.apk release/MiWearDndBridge-Watch-v1.0.0-CI-debug.apk
+          cp docs/MiWear-DND-Bridge-v1.0.0-Final-Report.docx release/MiWear-DND-Bridge-v1.0.0-Final-Report.docx
+          cat > release-notes.md <<'EOF'
+          # MiWear DND Bridge v1.0.0
+
+          First functionally validated release for the tested POCO HyperOS 3 / Android 16 + Xiaomi Watch 5 Wear OS configuration.
+
+          ## Validated behavior
+          - Manual and scheduled POCO DND synchronize to the Watch's complete native DND state.
+          - Normal notification sound/vibration remain suppressed during deep sleep.
+          - DND icon remains stable through extensive Watch UI use.
+          - Real HyperOS Clock alarms trigger Watch alarm UI, vibration, and continuously looping Watch alarm audio.
+          - Alarm playback works with DND ON and OFF.
+          - Dismissing from the Watch stops the phone alarm.
+          - Final overnight 2:30 AM -> alarm inside DND -> 10:15 AM OFF sequence passed.
+
+          ## Important APK signing note
+          The two APKs attached here are **CI-built debug APKs produced together as a matched pair from the v1.0.0 source**. Install/use them together. GitHub-hosted debug signing keys are not a stable long-term signing identity, so do not mix one of these APKs with a differently signed local build.
+
+          The exact locally device-validated APK binaries were preserved separately on the development system. A full uninstall/fresh install requires the one-time Watch DND and `WRITE_SECURE_SETTINGS` grants documented in `INSTALLATION.md`.
+
+          See the README, installation guide, validation matrix, troubleshooting guide, and full technical report for details.
+          EOF
+
+      - name: Create or update v1.0.0 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            gh release upload v1.0.0 release/* --clobber
+          else
+            gh release create v1.0.0 release/* \
+              --target "$GITHUB_SHA" \
+              --title "MiWear DND Bridge v1.0.0" \
+              --notes-file release-notes.md
+          fi
